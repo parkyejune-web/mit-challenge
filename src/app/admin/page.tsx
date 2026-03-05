@@ -49,6 +49,8 @@ export default function AdminPage() {
   const [data, setData] = useState<FunnelData | null>(null);
   const [fetchError, setFetchError] = useState("");
   const [copyUid, setCopyUid] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -114,6 +116,27 @@ export default function AdminPage() {
     await fetch("/api/admin/logout", { method: "POST" });
     setAuthenticated(false);
     setData(null);
+  };
+
+  const handleResetFunnel = async () => {
+    if (!confirm("퍼널 데이터를 모두 삭제하고 초기화할까요? 이 작업은 되돌릴 수 없습니다.")) return;
+    setResetting(true);
+    setResetMessage(null);
+    try {
+      const res = await fetch("/api/admin/funnel/reset", { method: "POST" });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setResetMessage("초기화되었습니다.");
+        fetchFunnel();
+        setTimeout(() => setResetMessage(null), 3000);
+      } else {
+        setResetMessage(json.error || "초기화 실패.");
+      }
+    } catch {
+      setResetMessage("초기화 요청 실패.");
+    } finally {
+      setResetting(false);
+    }
   };
 
   const copyToClipboard = (uid: string) => {
@@ -234,7 +257,15 @@ export default function AdminPage() {
             </h1>
             <p className="mt-1 text-sm text-white/50">MIT 트레이딩 챌린지 실시간 퍼널</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleResetFunnel}
+              disabled={resetting}
+              className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-50"
+            >
+              {resetting ? "초기화 중..." : "퍼널 초기화"}
+            </button>
             <button
               type="button"
               onClick={fetchFunnel}
@@ -257,6 +288,11 @@ export default function AdminPage() {
             {fetchError}
           </p>
         )}
+        {resetMessage && (
+          <p className="mb-4 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-300">
+            {resetMessage}
+          </p>
+        )}
 
         <div className="space-y-8">
           {/* Traffic Card */}
@@ -268,6 +304,9 @@ export default function AdminPage() {
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-cyan-400/90">
               트래픽
             </h2>
+            <p className="mb-3 text-xs text-white/45">
+              ADMIN_EXCLUDE_IP에 내 IP를 넣어두면 내 접속은 트래킹에서 제외됩니다.
+            </p>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-xs text-white/50">총 조회수</p>
