@@ -14,13 +14,13 @@ import {
 
 const OBSIDIAN = "#0a0a0b";
 const STAGE_LABELS: Record<string, string> = {
-  landing: "Landing",
-  survey_q1: "Survey Q1",
-  survey_q2: "Survey Q2",
-  survey_q3: "Survey Q3",
-  survey_q4: "Survey Q4",
-  uid_input: "UID Input",
-  final_dm: "Final DM",
+  landing: "메인",
+  survey_q1: "설문 1",
+  survey_q2: "설문 2",
+  survey_q3: "설문 3",
+  survey_q4: "설문 4",
+  uid_input: "UID 입력",
+  final_dm: "최종 DM",
 };
 
 type FunnelItem = { stage: string; count: number; dropOffPercent: number };
@@ -86,10 +86,10 @@ export default function AdminPage() {
         setPassword("");
         fetchFunnel();
       } else {
-        setLoginError(json.error || "Login gagal.");
+        setLoginError(json.error || "로그인 실패.");
       }
     } catch {
-      setLoginError("Koneksi gagal.");
+      setLoginError("연결 실패.");
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export default function AdminPage() {
       const json = await res.json();
       setData(json);
     } catch {
-      setFetchError("Gagal memuat data.");
+      setFetchError("데이터 불러오기 실패.");
     }
   }, []);
 
@@ -125,7 +125,7 @@ export default function AdminPage() {
   const formatDate = (iso: string) => {
     try {
       const d = new Date(iso);
-      return d.toLocaleString("id-ID", {
+      return d.toLocaleString("ko-KR", {
         dateStyle: "short",
         timeStyle: "short",
       });
@@ -140,7 +140,7 @@ export default function AdminPage() {
         className="min-h-screen flex items-center justify-center font-sans"
         style={{ background: OBSIDIAN, color: "#fafafa" }}
       >
-        <p className="text-sm text-white/50">Memuat...</p>
+        <p className="text-sm text-white/50">로딩 중...</p>
       </div>
     );
   }
@@ -158,14 +158,14 @@ export default function AdminPage() {
         >
           <div className="mb-6 text-center">
             <h1 className="text-xl font-bold tracking-tight text-white">
-              Admin — MIT Control Center
+              어드민 — MIT 관제 센터
             </h1>
-            <p className="mt-1 text-xs text-white/50">Hanya Master MIT_ZUN</p>
+            <p className="mt-1 text-xs text-white/50">마스터 MIT_ZUN 전용</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label htmlFor="admin-id" className="mb-1.5 block text-xs font-medium text-white/60">
-                ID
+                아이디
               </label>
               <input
                 id="admin-id"
@@ -174,7 +174,7 @@ export default function AdminPage() {
                 onChange={(e) => setId(e.target.value)}
                 autoComplete="username"
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
-                placeholder="Admin ID"
+                placeholder="관리자 아이디"
                 required
               />
             </div>
@@ -189,7 +189,7 @@ export default function AdminPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
-                placeholder="Kata sandi"
+                placeholder="비밀번호"
                 required
               />
             </div>
@@ -201,7 +201,7 @@ export default function AdminPage() {
               disabled={loading}
               className="w-full rounded-full border border-cyan-500/30 bg-gradient-to-r from-cyan-900/40 to-cyan-800/30 py-3.5 text-sm font-semibold text-white shadow-[0_0_30px_rgba(6,182,212,0.2)] transition hover:border-cyan-400/50 disabled:opacity-50"
             >
-              {loading ? "Masuk..." : "Masuk"}
+              {loading ? "로그인 중..." : "로그인"}
             </button>
           </form>
         </motion.div>
@@ -230,9 +230,9 @@ export default function AdminPage() {
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Control Center — Funnel Analytics
+              관제 센터 — 퍼널 분석
             </h1>
-            <p className="mt-1 text-sm text-white/50">Real-time MIT Trading Challenge funnel</p>
+            <p className="mt-1 text-sm text-white/50">MIT 트레이딩 챌린지 실시간 퍼널</p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -240,14 +240,14 @@ export default function AdminPage() {
               onClick={fetchFunnel}
               className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10"
             >
-              Segarkan
+              새로고침
             </button>
             <button
               type="button"
               onClick={handleLogout}
               className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/20"
             >
-              Keluar
+              로그아웃
             </button>
           </div>
         </header>
@@ -266,17 +266,17 @@ export default function AdminPage() {
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
           >
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-cyan-400/90">
-              Traffic
+              트래픽
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-xs text-white/50">Total View</p>
+                <p className="text-xs text-white/50">총 조회수</p>
                 <p className="mt-1 text-2xl font-bold text-white sm:text-3xl">
                   {data?.traffic?.totalViews ?? 0}
                 </p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-xs text-white/50">Sesi aktif (5 menit)</p>
+                <p className="text-xs text-white/50">활성 세션 (5분)</p>
                 <p className="mt-1 text-2xl font-bold text-cyan-400 sm:text-3xl">
                   {data?.traffic?.activeSessions ?? 0}
                 </p>
@@ -292,10 +292,10 @@ export default function AdminPage() {
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
           >
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-cyan-400/90">
-              Conversion Funnel
+              전환 퍼널
             </h2>
             <p className="mb-4 text-xs text-white/50">
-              Landing → Survey Q1–Q4 → UID Input → Final DM (drop-off %)
+              메인 → 설문 1~4 → UID 입력 → 최종 DM (이탈률 %)
             </p>
             <div className="h-[320px] w-full min-w-0 sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -316,7 +316,7 @@ export default function AdminPage() {
                     formatter={(value, _name, props) => {
                       const v = typeof value === "number" ? value : 0;
                       const drop = (props?.payload as { dropOff?: number })?.dropOff;
-                      return `${v} sesi${drop != null ? ` • Drop-off: ${drop}%` : ""}`;
+                      return `${v}세션${drop != null ? ` • 이탈: ${drop}%` : ""}`;
                     }}
                   />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={32}>
@@ -337,11 +337,11 @@ export default function AdminPage() {
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
           >
             <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-cyan-400/90">
-              User Behavior — Drop-off & Waktu
+              사용자 행동 — 이탈 & 체류 시간
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <p className="mb-2 text-xs text-white/50">Titik drop-off (keluar tanpa selesai)</p>
+                <p className="mb-2 text-xs text-white/50">이탈 구간 (완료 없이 나간 단계)</p>
                 <ul className="space-y-1.5">
                   {(data?.dropOffByStage ?? [])
                     .filter((d) => d.dropOffCount > 0)
@@ -354,7 +354,7 @@ export default function AdminPage() {
                         <span className="font-medium text-red-300">
                           {STAGE_LABELS[d.stage] ?? d.stage}
                         </span>
-                        <span className="text-sm text-red-400/90">{d.dropOffCount} keluar</span>
+                        <span className="text-sm text-red-400/90">{d.dropOffCount}명 이탈</span>
                       </li>
                     ))}
                   {(!data?.dropOffByStage?.length || data.dropOffByStage.every((d) => d.dropOffCount === 0)) && (
@@ -365,19 +365,19 @@ export default function AdminPage() {
                 </ul>
               </div>
               <div>
-                <p className="mb-2 text-xs text-white/50">Paling lama di tahap (rata-rata detik)</p>
+                <p className="mb-2 text-xs text-white/50">가장 오래 머문 단계 (평균 초)</p>
                 {maxTimeStage && maxTimeStage.avgSeconds > 0 ? (
                   <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2">
                     <span className="font-medium text-cyan-300">
                       {STAGE_LABELS[maxTimeStage.stage] ?? maxTimeStage.stage}
                     </span>
                     <span className="ml-2 text-sm text-cyan-400/90">
-                      {maxTimeStage.avgSeconds}s ({maxTimeStage.totalSessions} sesi)
+                      {maxTimeStage.avgSeconds}초 ({maxTimeStage.totalSessions}세션)
                     </span>
                   </div>
                 ) : (
                   <p className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/50">
-                    Belum ada data waktu
+                    체류 시간 데이터 없음
                   </p>
                 )}
               </div>
@@ -399,8 +399,8 @@ export default function AdminPage() {
                 <thead>
                   <tr className="border-b border-white/10 text-white/60">
                     <th className="pb-2 pr-4 font-medium">UID</th>
-                    <th className="pb-2 pr-4 font-medium hidden sm:table-cell">Waktu</th>
-                    <th className="pb-2 w-20 text-right">Salin</th>
+                    <th className="pb-2 pr-4 font-medium hidden sm:table-cell">시간</th>
+                    <th className="pb-2 w-20 text-right">복사</th>
                   </tr>
                 </thead>
                 <tbody className="text-white/80">
@@ -423,7 +423,7 @@ export default function AdminPage() {
                             onClick={() => copyToClipboard(row.uid)}
                             className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs font-medium text-white/70 hover:bg-white/10"
                           >
-                            {copyUid === row.uid ? "Tersalin" : "Salin"}
+                            {copyUid === row.uid ? "복사됨" : "복사"}
                           </button>
                         </td>
                       </tr>

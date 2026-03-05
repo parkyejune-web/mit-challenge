@@ -11,11 +11,30 @@ const ALLOWED_STAGES = [
   "final_dm",
 ] as const;
 
+function getClientIp(request: NextRequest): string | null {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const real = request.headers.get("x-real-ip");
+  return real?.trim() || null;
+}
+
 /**
  * POST /api/funnel/track
  * Record a funnel stage (e.g. landing view). Uses server-side Supabase.
+ * If ADMIN_EXCLUDE_IP env matches request IP, event is not stored (admin visits excluded).
  */
 export async function POST(request: NextRequest) {
+  const excludeIp = process.env.ADMIN_EXCLUDE_IP?.trim();
+  if (excludeIp) {
+    const clientIp = getClientIp(request);
+    if (clientIp && clientIp === excludeIp) {
+      return Response.json({ ok: true, skipped: "excluded_ip" });
+    }
+  }
+
   let body: { stage?: string; session_id?: string; uid?: string };
   try {
     body = await request.json();
