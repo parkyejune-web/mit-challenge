@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { trackFunnelStage } from "@/lib/funnel";
 
 const OBSIDIAN = "#0a0a0b";
 const STORAGE_KEY = "mit-onboarding";
@@ -129,7 +130,7 @@ const PHASES: PhaseConfig[] = [
     ],
     kycGuideSteps: KYC_GUIDE_3_STEPS,
     cta: { label: "Buka Gate.io (Link Eksklusif MIT)", href: GATE_REFERRAL_URL, external: true },
-    ctaSecondary: "Saya sudah daftar, lanjut ke Verifikasi UID (Step 3)",
+    ctaSecondary: "Saya sudah daftar, lanjut ke Verifikasi UID\n(Step 3)",
   },
   {
     step: 3,
@@ -169,6 +170,7 @@ export default function OnboardingPage() {
   const [uid, setUid] = useState("");
   const [uidStatus, setUidStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [uidError, setUidError] = useState("");
+  const finalDmTracked = useRef(false);
   const [mounted, setMounted] = useState(false);
   const [showKycGuide, setShowKycGuide] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
@@ -215,6 +217,13 @@ export default function OnboardingPage() {
     return () => clearTimeout(t);
   }, [mounted, phaseIndex]);
 
+  useEffect(() => {
+    if (mounted && phaseIndex === 4 && !finalDmTracked.current) {
+      finalDmTracked.current = true;
+      trackFunnelStage("final_dm", uid || undefined);
+    }
+  }, [mounted, phaseIndex, uid]);
+
   const phase = PHASES[phaseIndex];
 
   const goNext = useCallback(() => {
@@ -258,6 +267,7 @@ export default function OnboardingPage() {
       const res = await fetch(`/api/gateio/verify?uid=${encodeURIComponent(raw)}`);
       const data = await res.json();
       if (data.ok) {
+        trackFunnelStage("uid_input", raw);
         setUidStatus("success");
         setTimeout(() => {
           goNext();
@@ -746,7 +756,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={goNext}
-                  className="block w-full min-h-[48px] rounded-full border border-white/10 bg-white/5 py-3.5 text-center text-sm font-medium text-white/80 transition hover:bg-white/10"
+                  className="block w-full min-h-[48px] rounded-full border border-white/10 bg-white/5 py-3.5 text-center text-sm font-medium text-white/80 transition hover:bg-white/10 whitespace-pre-line"
                 >
                     {phase.ctaSecondary}
                   </button>

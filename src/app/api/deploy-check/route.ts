@@ -2,8 +2,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 
 /**
  * GET /api/deploy-check
- * Final deployment readiness: env linkage + Supabase connectivity.
- * Does not expose any secret values.
+ * Env + Supabase 연결 + 퍼널 추적 여부 확인. 비밀값 노출 없음.
  */
 export async function GET() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -13,6 +12,7 @@ export async function GET() {
 
   const supabaseConfigured = !!(supabaseUrl && supabaseKey);
   let supabaseConnected = false;
+  let landingCount = 0;
 
   if (supabaseConfigured) {
     try {
@@ -23,6 +23,13 @@ export async function GET() {
           .select("id")
           .limit(1);
         supabaseConnected = !error;
+        if (!error) {
+          const { count } = await supabase
+            .from("funnel_tracker")
+            .select("*", { count: "exact", head: true })
+            .eq("stage", "landing");
+          landingCount = count ?? 0;
+        }
       }
     } catch {
       supabaseConnected = false;
@@ -36,5 +43,14 @@ export async function GET() {
     supabaseConfigured,
     supabaseConnected,
     adminConfigured,
+    tracking: {
+      landingCount,
+      message:
+        supabaseConnected && landingCount > 0
+          ? "랜딩 추적 정상 (Landing view 기록됨)"
+          : supabaseConnected
+            ? "DB 연결됨. 메인 페이지 접속 후 landingCount 증가 확인"
+            : "Supabase 미연결 또는 funnel_tracker 없음",
+    },
   });
 }

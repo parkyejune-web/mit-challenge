@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { trackFunnelStage } from "@/lib/funnel";
 
 const OBSIDIAN = "#0a0a0b";
 const SHARP_WHITE = "#fafafa";
@@ -100,10 +101,13 @@ const item = {
 
 type SuccessPhase = "idle" | "scanning" | "granted";
 
+const SURVEY_STAGES: ("survey_q1" | "survey_q2" | "survey_q3" | "survey_q4")[] = ["survey_q1", "survey_q2", "survey_q3", "survey_q4"];
+
 export default function SurveyPage() {
   const [step, setStep] = useState(0);
   const [mindsetError, setMindsetError] = useState(false);
   const [successPhase, setSuccessPhase] = useState<SuccessPhase>("idle");
+  const trackedSteps = useRef<Set<number>>(new Set());
 
   const q = SURVEY[step];
   const isLastStep = step === SURVEY.length - 1;
@@ -114,6 +118,13 @@ export default function SurveyPage() {
     const t = setTimeout(() => setSuccessPhase("granted"), SCAN_DURATION_MS);
     return () => clearTimeout(t);
   }, [successPhase]);
+
+  useEffect(() => {
+    if (successPhase !== "idle" || step < 0 || step > 3) return;
+    if (trackedSteps.current.has(step)) return;
+    trackedSteps.current.add(step);
+    trackFunnelStage(SURVEY_STAGES[step]);
+  }, [step, successPhase]);
 
   const handleSelect = useCallback(
     (opt: { text: string; isRedAlert: boolean }) => {

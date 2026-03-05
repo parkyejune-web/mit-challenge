@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "MIT Trading Challenge | Challenge Profit Batch 1",
   description: "Logika trading 0,1% yang tetap jalan saat Anda tidur—buktikan dengan $50. Challenge $50→$100.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export const viewport: Viewport = {

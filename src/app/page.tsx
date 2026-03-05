@@ -61,6 +61,7 @@ import {
   getTotalProfitUsdt,
   getWinRatePercent,
 } from "@/lib/proof-assets";
+import { trackFunnelStage } from "@/lib/funnel";
 
 /** Luxury scroll reveal: PC (lg+) only, once: true, 0.8s easeOut */
 const VIEWPORT = { once: true, margin: "-80px" };
@@ -116,22 +117,6 @@ function formatPrice4(s: string): string {
     return dec ? `${withComma}.${dec}` : withComma;
   }
   return fixed;
-}
-
-const FUNNEL_SESSION_KEY = "mit-funnel-session";
-
-function getOrCreateFunnelSessionId(): string {
-  if (typeof window === "undefined") return "";
-  try {
-    let id = sessionStorage.getItem(FUNNEL_SESSION_KEY);
-    if (!id) {
-      id = `s_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-      sessionStorage.setItem(FUNNEL_SESSION_KEY, id);
-    }
-    return id;
-  } catch {
-    return `s_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-  }
 }
 
 export default function Home() {
@@ -200,13 +185,7 @@ export default function Home() {
     }
   }, []);
   useEffect(() => {
-    const sessionId = getOrCreateFunnelSessionId();
-    if (!sessionId) return;
-    fetch("/api/funnel/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage: "landing", session_id: sessionId }),
-    }).catch(() => {});
+    trackFunnelStage("landing");
   }, []);
 
   return (
