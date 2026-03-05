@@ -57,7 +57,7 @@ export async function GET(_request: NextRequest) {
   try {
     const { data: rows, error } = await supabase
       .from("funnel_tracker")
-      .select("session_id, stage, reached_at, time_spent_seconds, uid")
+      .select("session_id, stage, reached_at, time_spent_seconds, uid, utm_source, utm_medium, referrer")
       .order("reached_at", { ascending: false });
 
     if (error) {
@@ -69,12 +69,14 @@ export async function GET(_request: NextRequest) {
           uidList: [],
           dropOffByStage: [],
           timeSpentByStage: [],
+          sourceBreakdown: { byUtmSource: [], byReferrer: [] },
+          segmentFunnel: {},
         },
         { status: 200 }
       );
     }
 
-    const list = (rows || []) as { session_id: string; stage: string; reached_at: string; time_spent_seconds?: number | null; uid?: string | null }[];
+    const list = (rows || []) as { session_id: string; stage: string; reached_at: string; time_spent_seconds?: number | null; uid?: string | null; utm_source?: string | null; utm_medium?: string | null; referrer?: string | null }[];
 
     const uniqueSessionsByStage: Record<string, Set<string>> = {};
     STAGES_ORDER.forEach((s) => (uniqueSessionsByStage[s] = new Set()));
@@ -142,12 +144,65 @@ export async function GET(_request: NextRequest) {
       .slice(0, 100)
       .map(({ uid, reached_at }) => ({ uid, reached_at }));
 
+    const landingRows = list.filter((r) => r.stage === "landing");
+    const byUtmSource: Record<string, number> = {};
+    const byReferrer: Record<string, number> = {};
+    for (const r of landingRows) {
+      const src = r.utm_source?.trim() || "(직접)";
+      byUtmSource[src] = (byUtmSource[src] || 0) + 1;
+      const ref = r.referrer?.trim() ? (r.referrer.length > 60 ? r.referrer.slice(0, 60) + "…" : r.referrer) : "(직접)";
+      byReferrer[ref] = (byReferrer[ref] || 0) + 1;
+    }
+    const sourceBreakdown = {
+      byUtmSource: Object.entries(byUtmSource).sort((a, b) => b[1] - a[1]).slice(0, 20),
+      byReferrer: Object.entries(byReferrer).sort((a, b) => b[1] - a[1]).slice(0, 20),
+    };
+
+    const sessionToSource: Record<string, string> = {};
+    for (const r of landingRows) {
+      const src = r.utm_source?.trim() || "direct";
+      if (!sessionToSource[r.session_id]) sessionToSource[r.session_id] = src;
+    }
+    const SEGMENTS = [
+      { key: "youtube_mit_trading", label: "유튜브" },
+      { key: "discord", label: "디스코드" },
+    ] as const;
+    const segmentFunnel: Record<string, { label: string; totalViews: number; funnel: { stage: string; count: number; dropOffPercent: number }[]; uidCount: number }> = {};
+    for (const seg of SEGMENTS) {
+      const sessionIds = new Set<string>();
+      for (const [sid, src] of Object.entries(sessionToSource)) {
+        if (src === seg.key) sessionIds.add(sid);
+      }
+      const segList = list.filter((r) => sessionIds.has(r.session_id));
+      const segByStage: Record<string, Set<string>> = {};
+      STAGES_ORDER.forEach((s) => (segByStage[s] = new Set()));
+      for (const r of segList) {
+        segByStage[r.stage]?.add(r.session_id);
+      }
+      const segStageCounts = STAGES_ORDER.map((s) => segByStage[s]?.size ?? 0);
+      const segFunnel = STAGES_ORDER.map((stage, i) => {
+        const count = segStageCounts[i];
+        const prev = segStageCounts[i - 1] ?? count;
+        const dropOffPercent = prev > 0 ? Math.round((1 - count / prev) * 100) : 0;
+        return { stage, count, dropOffPercent };
+      });
+      const segUidCount = new Set(uidEntries.filter((e) => sessionIds.has(e.session_id)).map((e) => e.uid)).size;
+      segmentFunnel[seg.key] = {
+        label: seg.label,
+        totalViews: sessionIds.size,
+        funnel: segFunnel,
+        uidCount: segUidCount,
+      };
+    }
+
     return Response.json({
       traffic: { totalViews, activeSessions },
       funnel,
       uidList,
       dropOffByStage,
       timeSpentByStage,
+      sourceBreakdown,
+      segmentFunnel,
     });
   } catch (e) {
     console.error("Funnel fetch error:", e);
@@ -158,6 +213,8 @@ export async function GET(_request: NextRequest) {
         uidList: [],
         dropOffByStage: [],
         timeSpentByStage: [],
+        sourceBreakdown: { byUtmSource: [], byReferrer: [] },
+        segmentFunnel: {},
       },
       { status: 200 }
     );

@@ -185,7 +185,13 @@ export default function Home() {
     }
   }, []);
   useEffect(() => {
-    trackFunnelStage("landing");
+    const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const referrer = typeof document !== "undefined" ? document.referrer || "" : "";
+    const source: { utm_source?: string; utm_medium?: string; referrer?: string } = {};
+    if (params?.get("utm_source")) source.utm_source = params.get("utm_source")!;
+    if (params?.get("utm_medium")) source.utm_medium = params.get("utm_medium")!;
+    if (referrer) source.referrer = referrer;
+    trackFunnelStage("landing", Object.keys(source).length ? source : undefined);
   }, []);
 
   return (

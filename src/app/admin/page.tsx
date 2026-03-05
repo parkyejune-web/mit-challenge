@@ -29,12 +29,16 @@ type UidEntry = { uid: string; reached_at: string };
 type DropOffItem = { stage: string; dropOffCount: number };
 type TimeSpentItem = { stage: string; avgSeconds: number; totalSessions: number };
 
+type SourceBreakdown = { byUtmSource: [string, number][]; byReferrer: [string, number][] };
+type SegmentFunnel = { label: string; totalViews: number; funnel: FunnelItem[]; uidCount: number };
 type FunnelData = {
   traffic: Traffic;
   funnel: FunnelItem[];
   uidList: UidEntry[];
   dropOffByStage: DropOffItem[];
   timeSpentByStage: TimeSpentItem[];
+  sourceBreakdown?: SourceBreakdown;
+  segmentFunnel?: Record<string, SegmentFunnel>;
 };
 
 const CHART_COLORS = ["#22d3ee", "#06b6d4", "#0891b2", "#0e7490", "#155e75", "#164e63", "#0c4a6e"];
@@ -322,6 +326,85 @@ export default function AdminPage() {
               </div>
             </div>
           </motion.section>
+
+          {/* 유입 경로 — 어디서 들온건지 */}
+          {(data?.sourceBreakdown?.byUtmSource?.length || data?.sourceBreakdown?.byReferrer?.length) ? (
+            <motion.section
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.03 }}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+            >
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-cyan-400/90">
+                유입 경로 (어디서 들온건지)
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-xs text-white/50">UTM 소스 (utm_source)</p>
+                  <ul className="space-y-1.5">
+                    {(data?.sourceBreakdown?.byUtmSource ?? []).map(([label, count]) => (
+                      <li key={label} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                        <span className="text-sm text-white/80">{label}</span>
+                        <span className="font-mono text-sm font-medium text-cyan-400">{count}명</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="mb-2 text-xs text-white/50">레퍼러 (어느 사이트에서 왔는지)</p>
+                  <ul className="space-y-1.5">
+                    {(data?.sourceBreakdown?.byReferrer ?? []).map(([label, count]) => (
+                      <li key={label} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                        <span className="truncate text-sm text-white/80" title={label}>{label}</span>
+                        <span className="ml-2 shrink-0 font-mono text-sm font-medium text-cyan-400">{count}명</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </motion.section>
+          ) : null}
+
+          {/* 퍼널 비교 — 유튜브 vs 디스코드 */}
+          {data?.segmentFunnel ? (
+            <motion.section
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.04 }}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+            >
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-cyan-400/90">
+                퍼널 비교 (유튜브 vs 디스코드)
+              </h2>
+              <p className="mb-4 text-xs text-white/45">
+                유튜브: ?utm_source=youtube_mit_trading / 디스코드: ?utm_source=discord 링크 써야 구분됨.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(["youtube_mit_trading", "discord"] as const).map((key) => {
+                  const seg = data.segmentFunnel?.[key];
+                  if (!seg) return null;
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-xl border border-white/10 bg-white/[0.04] p-4"
+                    >
+                      <p className="mb-3 font-semibold text-white">{seg.label}</p>
+                      <p className="mb-2 text-2xl font-bold text-cyan-400">{seg.totalViews} <span className="text-sm font-normal text-white/50">조회</span></p>
+                      <p className="mb-3 text-sm text-white/70">UID 입력 완료: <span className="font-mono text-cyan-400">{seg.uidCount}명</span></p>
+                      <ul className="space-y-1 text-xs text-white/60">
+                        {seg.funnel.map((f, i) => (
+                          <li key={f.stage} className="flex justify-between">
+                            <span>{STAGE_LABELS[f.stage] ?? f.stage}</span>
+                            <span className="font-mono text-white/80">{f.count}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.section>
+          ) : null}
 
           {/* Conversion Funnel — horizontal bar */}
           <motion.section

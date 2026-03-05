@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  let body: { stage?: string; session_id?: string; uid?: string };
+  let body: { stage?: string; session_id?: string; uid?: string; utm_source?: string; utm_medium?: string; referrer?: string };
   try {
     body = await request.json();
   } catch {
@@ -68,6 +68,9 @@ export async function POST(request: NextRequest) {
     stage: string;
     reached_at: string;
     uid?: string;
+    utm_source?: string;
+    utm_medium?: string;
+    referrer?: string;
   } = {
     session_id: sessionId,
     stage,
@@ -77,6 +80,12 @@ export async function POST(request: NextRequest) {
     const uid = typeof body.uid === "string" ? body.uid.trim() : null;
     if (uid) row.uid = uid;
   }
+  const utmSource = typeof body.utm_source === "string" ? body.utm_source.trim().slice(0, 256) : null;
+  const utmMedium = typeof body.utm_medium === "string" ? body.utm_medium.trim().slice(0, 256) : null;
+  const referrer = typeof body.referrer === "string" ? body.referrer.trim().slice(0, 512) : null;
+  if (utmSource) row.utm_source = utmSource;
+  if (utmMedium) row.utm_medium = utmMedium;
+  if (referrer) row.referrer = referrer;
 
   const { error } = await supabase.from("funnel_tracker").insert(row);
 
